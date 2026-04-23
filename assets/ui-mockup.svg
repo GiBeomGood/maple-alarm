@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 180" width="420" height="180">
+  <defs>
+    <style>
+      .label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; letter-spacing: 1px; }
+      .window-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #666; }
+      .window-sub { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+      .window-time { font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: bold; letter-spacing: 0.5px; }
+      .btn-label { font-family: 'IBM Plex Sans KR', sans-serif; font-size: 12px; font-weight: 500; }
+    </style>
+  </defs>
+
+  <!-- NORMAL STATE -->
+  <g>
+    <!-- Label -->
+    <text x="80" y="20" text-anchor="middle" class="label">NORMAL</text>
+
+    <!-- Window Background -->
+    <rect x="20" y="30" width="160" height="72" rx="10" fill="#1a1a1a" stroke="#333" stroke-width="1"/>
+
+    <!-- Dot (Green) -->
+    <circle cx="32" cy="50" r="4" fill="#44ff88"/>
+
+    <!-- Caption -->
+    <text x="48" y="45" class="window-sub" fill="#666">다음 알람까지</text>
+
+    <!-- Time -->
+    <text x="48" y="67" class="window-time" fill="#e8e8e8">1:23</text>
+
+    <!-- Button -->
+    <rect x="28" y="108" width="144" height="20" rx="6" fill="#222" stroke="#2a2a2a" stroke-width="1"/>
+    <text x="100" y="122" text-anchor="middle" class="btn-label" fill="#444">확인</text>
+  </g>
+
+  <!-- ALARM STATE -->
+  <g>
+    <!-- Label -->
+    <text x="280" y="20" text-anchor="middle" class="label">ALARM</text>
+
+    <!-- Window Background (with red border) -->
+    <rect x="220" y="30" width="160" height="72" rx="10" fill="#1a1a1a" stroke="#ff4444" stroke-width="1.5"/>
+
+    <!-- Dot (Red) -->
+    <circle cx="232" cy="50" r="4" fill="#ff4444"/>
+
+    <!-- Caption -->
+    <text x="248" y="45" class="window-sub" fill="#cc2222">알람</text>
+
+    <!-- Time -->
+    <text x="248" y="67" class="window-time" fill="#ff4444">00:00</text>
+
+    <!-- Button (Active - Red) -->
+    <rect x="228" y="108" width="144" height="20" rx="6" fill="#ff4444" stroke="none"/>
+    <text x="300" y="122" text-anchor="middle" class="btn-label" fill="#fff">확인</text>
+  </g>
+
+  <!-- Legend -->
+  <text x="20" y="165" class="label" fill="#888">■ NORMAL: 다음 알람까지 카운트다운 상태 (비활성 버튼)</text>
+  <text x="20" y="180" class="label" fill="#ff4444">■ ALARM: 알람 발동 상태 (빨간 버튼, 깜빡임 중)</text>
+</svg>

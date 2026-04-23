@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint — Rust Alarm App</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --border2: #333;
+    --text: #e8e8e8;
+    --muted: #666;
+    --muted2: #888;
+    --accent: #c8ff00;
+    --accent-dim: #8aaf00;
+    --red: #ff4444;
+    --red-dim: #cc2222;
+    --green: #44ff88;
+    --blue: #4488ff;
+    --amber: #ffaa44;
+    --tag-bg: #1e2a1e;
+    --tag-text: #44ff88;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans KR', sans-serif;
+    font-weight: 300;
+    line-height: 1.7;
+    padding: 48px 32px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  .header {
+    border-bottom: 1px solid var(--border2);
+    padding-bottom: 28px;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .header-icon {
+    width: 48px;
+    height: 48px;
+    image-rendering: pixelated;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .header-text {}
+  .project-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  h1 {
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: var(--muted2);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* Section */
+  .section {
+    margin-bottom: 48px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .section-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    min-width: 32px;
+  }
+  h2 {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: 0.2px;
+  }
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+  .card p {
+    font-size: 13px;
+    color: var(--muted2);
+    line-height: 1.8;
+  }
+
+  /* Crate table */
+  .crate-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .crate-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: left;
+    padding: 0 12px 10px 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  .crate-table th:first-child { padding-left: 0; }
+  .crate-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .crate-table td:first-child { padding-left: 0; }
+  .crate-table tr:last-child td { border-bottom: none; }
+  .crate-name {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--accent);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .crate-role { color: var(--muted2); }
+  .crate-note { color: var(--muted); font-size: 12px; }
+
+  /* Thread diagram */
+  .thread-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 2;
+    color: var(--muted2);
+  }
+  .t-main { color: var(--accent); font-weight: 500; }
+  .t-thread { color: var(--blue); }
+  .t-desc { color: var(--muted); }
+  .t-indent { padding-left: 20px; }
+  .t-indent2 { padding-left: 40px; }
+
+  /* State machine */
+  .state-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .state-box {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .state-box.alarm { border-color: var(--red); color: var(--red); }
+  .state-box.confirm { border-color: var(--green); color: var(--green); }
+  .state-arrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    padding: 0 8px;
+    white-space: nowrap;
+  }
+
+  /* File tree */
+  .file-tree {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 2;
+  }
+  .ft-dir { color: var(--amber); }
+  .ft-file { color: var(--muted2); }
+  .ft-file.important { color: var(--accent); }
+  .ft-comment { color: var(--muted); }
+  .ft-indent { padding-left: 20px; display: block; }
+  .ft-indent2 { padding-left: 40px; display: block; }
+
+  /* UI mockup section */
+  .mockup-grid {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    margin-top: 8px;
+  }
+  .mockup-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+  }
+  .mockup-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+  .pip-window {
+    background: #1a1a1a;
+    border-radius: 10px;
+    padding: 10px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 160px;
+  }
+  .pip-window.normal { border: 1px solid #333; }
+  .pip-window.alarm { border: 1.5px solid #ff4444; }
+  .pip-row { display: flex; align-items: center; gap: 10px; }
+  .pip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .pip-dot.green { background: #44ff88; }
+  .pip-dot.red { background: #ff4444; }
+  .pip-sub { font-size: 11px; color: #666; margin-bottom: 1px; font-family: 'IBM Plex Mono', monospace; }
+  .pip-time { font-size: 18px; font-weight: 500; letter-spacing: 0.5px; font-family: 'IBM Plex Mono', monospace; }
+  .pip-time.normal-time { color: #e8e8e8; }
+  .pip-time.alarm-time { color: #ff4444; }
+  .pip-sub.alarm-sub { color: #cc2222; }
+  .pip-btn {
+    width: 100%;
+    padding: 5px 0;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-family: 'IBM Plex Sans KR', sans-serif;
+  }
+  .pip-btn.inactive {
+    background: #222;
+    color: #444;
+    border: 1px solid #2a2a2a;
+    cursor: default;
+  }
+  .pip-btn.active {
+    background: #ff4444;
+    color: #fff;
+  }
+
+  .tray-menu {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 6px;
+    overflow: hidden;
+    width: 160px;
+  }
+  .tray-header {
+    padding: 8px 14px;
+    font-size: 12px;
+    color: #666;
+    border-bottom: 1px solid #2a2a2a;
+    background: #161616;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .tray-header span { color: #e8e8e8; font-weight: 500; }
+  .tray-item {
+    padding: 8px 14px;
+    font-size: 13px;
+    color: #e8e8e8;
+    font-family: 'IBM Plex Sans KR', sans-serif;
+  }
+
+  /* Spec list */
+  .spec-list {
+    list-style: none;
+    padding: 0;
+  }
+  .spec-list li {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--muted2);
+    align-items: flex-start;
+  }
+  .spec-list li:last-child { border-bottom: none; }
+  .spec-list .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .tag.todo { background: #1a2a3a; color: #4488ff; }
+  .tag.note { background: #2a2a1a; color: #ffaa44; }
+  .tag.warn { background: #2a1a1a; color: #ff4444; }
+  .tag.done { background: #1a2a1a; color: #44ff88; }
+
+  /* Code block */
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.9;
+    overflow-x: auto;
+    color: var(--muted2);
+  }
+  .kw { color: #c8ff00; }
+  .cm { color: #555; }
+  .st { color: #ff8844; }
+  .ty { color: #88ccff; }
+
+  /* Cargo.toml preview */
+  .toml-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 2;
+    color: var(--muted2);
+  }
+  .toml-section { color: var(--amber); }
+  .toml-key { color: var(--text); }
+  .toml-val { color: #ff8844; }
+  .toml-comment { color: #444; }
+
+  /* Checklist */
+  .checklist { list-style: none; }
+  .checklist li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 7px 0;
+    font-size: 13px;
+    color: var(--muted2);
+    border-bottom: 1px solid var(--border);
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .check-box {
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    flex-shrink: 0;
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  hr.divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 40px 0;
+  }
+
+  .note-box {
+    background: #1a2000;
+    border: 1px solid #3a4800;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: #aac000;
+    font-family: 'IBM Plex Mono', monospace;
+    margin-top: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <img class="header-icon" src="data:image/x-icon;base64,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" alt="app icon">
+  <div class="header-text">
+    <div class="project-label">Sprint Document</div>
+    <h1>Rust Alarm App</h1>
+    <div class="subtitle">rust · nwg · windows-sys · target: windows x86_64 · single-binary</div>
+  </div>
+</div>
+
+<!-- 0. 프로젝트 목적 -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">00</span>
+    <h2>프로젝트 목적</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="card">
+    <p><strong style="color: var(--text);">메이플스토리 버프 스킬 재사용 리마인더.</strong> 게임 내 2분 지속 버프가 만료되기 전에 재사용해야 하는데, 전투에 집중하다 보면 놓치기 쉬움. 이 도구는 지속시간보다 20초 짧은 100초마다 알람을 울려 재사용 시점을 알림.</p>
+    <p style="margin-top: 10px;">확인 버튼 클릭 = 스킬 재사용 시점. 따라서 <strong style="color: var(--text);">클릭 응답 지연이 체감 가능한 수준이면 안 됨</strong>(알람이 계속 울리는 동안 게임에 집중 불가). pip 창은 게임 위에 띄우되 최소 크기. 단일 .exe, 외부 DLL 없음, 저사양 리소스 점유가 핵심 제약.</p>
+  </div>
+  <div class="note-box">⚠ <strong>게임은 창모드 또는 테두리 없는 창모드로 실행할 것.</strong> 배타적 전체화면(exclusive fullscreen)에서는 Windows의 TOPMOST 플래그도 덮이므로 pip가 보이지 않음. 이 조건은 사용자가 지키는 전제로 가정하며, 프로그램이 감지·우회하지 않음(비용 대비 가치 낮음).</div>
+</div>
+
+<!-- 1. 요구사항 -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <h2>요구사항 정의</h2>
+    <div class="section-line"></div>
+  </div>
+  <ul class="spec-list">
+    <li><span class="tag done">core</span>프로그램 실행 후 100초 경과 시 알람 발동 (2분 지속 버프 - 20초 여유분. 테스트 시 <code>DEBUG_TIMER</code> 환경변수로 단축)</li>
+    <li><span class="tag done">core</span>알람 발동 시 Windows <code>Beep()</code> API로 소리 재생 — 확인 버튼 클릭 전까지 루프</li>
+    <li><span class="tag done">core</span>확인 버튼 클릭 시 <strong style="color: var(--text);">확인음 재생</strong>(알람과 명확히 다른 톤) 후 타이머 100초 리셋 → 반복</li>
+    <li><span class="tag done">core</span>pip 창 — 항상 표시, 드래그 가능, topmost, 고정 크기(평상시/알람 동일). 초기 위치는 <strong style="color: var(--text);">우측 하단</strong>, 드래그로 이동한 위치는 <strong style="color: var(--text);">프로세스가 살아있는 동안만 유지</strong>(디스크 저장 없음, 재실행 시 다시 우측 하단)</li>
+    <li><span class="tag done">core</span>알람 중 확인 버튼은 <strong style="color: var(--text);">빨간색으로 깜빡임</strong>(0.5초 주기)으로 주의 끌기. 구현은 Frame+Label 합성 버튼(Button 위젯이 아님 — 배경색 커스터마이징 제약 때문)</li>
+    <li><span class="tag done">core</span>시스템 트레이 등록 — 첨부 .ico 아이콘 사용, 우클릭 메뉴(남은 시간 + 종료)</li>
+    <li><span class="tag done">core</span>다중 인스턴스 방지 — 이미 실행 중이면 기존 창 활성화 후 새 프로세스 종료</li>
+    <li><span class="tag done">core</span>시스템 절전(sleep/suspend) 진입 시 프로세스 자동 종료</li>
+    <li><span class="tag note">perf</span>RAM 목표 &lt;15MB, CPU 상시 ~0% (릴리즈 빌드 기준)</li>
+    <li><span class="tag note">build</span>빌드 타깃: Windows x86_64, <code>cargo build --release</code>, 단일 .exe</li>
+  </ul>
+</div>
+
+<!-- 2. 크레이트 -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <h2>크레이트 선택</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="card">
+    <table class="crate-table">
+      <thead>
+        <tr>
+          <th>크레이트</th>
+          <th>역할</th>
+          <th>비고</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="crate-name">native-windows-gui</span></td>
+          <td class="crate-role">pip 창, UI 이벤트 루프, <strong style="color: var(--text);">트레이 아이콘</strong>, <code>nwg::Notice</code>(cross-thread 통지)</td>
+          <td class="crate-note">nwg v1.0.13+ — 트레이 내장 지원</td>
+        </tr>
+        <tr>
+          <td><span class="crate-name">native-windows-derive</span></td>
+          <td class="crate-role">nwg UI 구조체 파생 매크로</td>
+          <td class="crate-note">v1.0.5</td>
+        </tr>
+        <tr>
+          <td><span class="crate-name">windows-sys</span></td>
+          <td class="crate-role"><code>Beep</code>, <code>CreateMutexW</code>, DPI awareness, power 이벤트 등 Win32 FFI</td>
+          <td class="crate-note">Microsoft 공식. winapi 대비 컴파일 시간↓, 바이너리 크기↓</td>
+        </tr>
+        <tr>
+          <td><span class="crate-name">std::sync</span></td>
+          <td class="crate-role"><code>Arc&lt;Mutex&gt;</code>, <code>AtomicBool</code>, <code>AtomicU64</code>로 스레드 간 상태 공유</td>
+          <td class="crate-note">외부 크레이트 불필요</td>
+        </tr>
+        <tr>
+          <td><span class="crate-name">std::thread</span></td>
+          <td class="crate-role">타이머 루프, 비프 루프를 별도 스레드로 분리</td>
+          <td class="crate-note">tokio 불필요 — async 없음</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note-box">변경 사항: ❌ tray-icon 크레이트 제외(nwg 이벤트 루프와 충돌) → ✅ nwg::TrayNotification 사용. ❌ winapi(레거시) → ✅ windows-sys(Microsoft 공식, 2026년 표준).</div>
+</div>
+
+<!-- 3. 아키텍처 -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <h2>스레드 아키텍처</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="thread-diagram">
+    <div><span class="t-main">main thread</span> <span class="t-desc">— nwg 이벤트 루프. UI, 트레이, 전원 이벤트 수신은 모두 여기서.</span></div>
+    <div class="t-indent">├─ <span class="t-thread">timer_thread</span> <span class="t-desc">— 1초 sleep 루프, 카운트다운만 수행</span></div>
+    <div class="t-indent2">│  Arc&lt;SharedState&gt; 공유 → nwg::Notice로 UI 갱신 신호</div>
+    <div class="t-indent">├─ <span class="t-thread">beep_thread</span> <span class="t-desc">— Alarm 진입 시 스폰, AtomicBool로 종료 제어</span></div>
+    <div class="t-indent2">│  Beep()은 동기 블로킹 → duration 120ms로 짧게 잡아 반응성 확보</div>
+    <div class="t-indent">└─ <span class="t-thread">confirm_beep_thread</span> <span class="t-desc">— 일회성, 확인 클릭 시 더블비프 후 자동 종료</span></div>
+    <div class="t-indent2">   detached — join 불필요</div>
+  </div>
+  <div style="margin-top: 16px;">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 10px; letter-spacing: 1px;">STATE MACHINE</div>
+    <div class="state-flow">
+      <div class="state-box">Idle(n초)</div>
+      <div class="state-arrow">─ n=0 ─▶</div>
+      <div class="state-box alarm">Alarm</div>
+      <div class="state-arrow">─ 확인 버튼 ─▶</div>
+      <div class="state-box confirm">Confirming</div>
+      <div class="state-arrow">─ 확인음 끝 ─▶</div>
+      <div class="state-box">Idle(100)</div>
+    </div>
+    <p style="font-size: 12px; color: var(--muted); margin-top: 12px; font-family: 'IBM Plex Mono', monospace;">
+      • Idle: timer_thread가 1초마다 remaining 감소 + notice 발신<br>
+      • Alarm 진입: remaining=0 도달 순간 notice 1회 발신 + beep_thread 스폰 + blink_timer 시작. 이후 UI는 blink_timer가 책임짐(timer_thread는 sleep만)<br>
+      • Confirming: 확인 클릭 즉시 진입. beep 중단 → 확인음 재생 → 즉시 Idle(reset_secs) 복귀<br>
+      • 확인음은 비동기 — 끝나기 전에도 이미 Idle 카운트다운 시작됨
+    </p>
+  </div>
+</div>
+
+<!-- 4. 공유 상태 -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <h2>공유 상태 구조체</h2>
+    <div class="section-line"></div>
+  </div>
+<pre><span class="cm">// src/state.rs</span>
+<span class="kw">use</span> std::sync::atomic::{<span class="ty">AtomicBool</span>, <span class="ty">AtomicU64</span>, <span class="ty">Ordering</span>};
+<span class="kw">use</span> std::sync::<span class="ty">Arc</span>;
+
+<span class="cm">// 상태는 AtomicU64 하나로 충분 — Mutex 불필요, 데드락 위험 제거</span>
+<span class="cm">// remaining=0 이면 Alarm, 그 외는 Idle(remaining)로 해석</span>
+<span class="kw">pub struct</span> <span class="ty">SharedState</span> {
+    <span class="kw">pub</span> remaining_secs: <span class="ty">AtomicU64</span>,      <span class="cm">// 남은 시간(0 = 알람 중)</span>
+    <span class="kw">pub</span> alarm_active: <span class="ty">AtomicBool</span>,       <span class="cm">// beep_thread 루프 제어</span>
+    <span class="kw">pub</span> reset_secs: <span class="ty">u64</span>,                 <span class="cm">// 리셋값 (기본 100, DEBUG_TIMER 시 10)</span>
+}
+
+<span class="kw">impl</span> <span class="ty">SharedState</span> {
+    <span class="kw">pub fn</span> new(reset_secs: <span class="ty">u64</span>) -&gt; <span class="ty">Arc</span>&lt;<span class="ty">Self</span>&gt; {
+        <span class="ty">Arc</span>::new(<span class="ty">Self</span> {
+            remaining_secs: <span class="ty">AtomicU64</span>::new(reset_secs),
+            alarm_active: <span class="ty">AtomicBool</span>::new(<span class="kw">false</span>),
+            reset_secs,
+        })
+    }
+    <span class="kw">pub fn</span> is_alarming(&amp;<span class="kw">self</span>) -&gt; <span class="ty">bool</span> {
+        <span class="kw">self</span>.remaining_secs.load(<span class="ty">Ordering</span>::Acquire) == 0
+    }
+}
+</pre>
+  <div class="note-box">Mutex 제거 이유: 단일 u64 + bool은 원자연산으로 충분. 데드락 리스크·락 순서 고민 자체를 제거.</div>
+</div>
+
+<!-- 5. 파일 구조 -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2>파일 구조</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="file-tree">
+    <span class="ft-dir">alarm-app/</span>
+    <span class="ft-indent"><span class="ft-file important">Cargo.toml</span></span>
+    <span class="ft-indent"><span class="ft-dir">assets/</span></span>
+    <span class="ft-indent2"><span class="ft-file important">icon.ico</span> <span class="ft-comment">← 첨부 파일 그대로 복사</span></span>
+    <span class="ft-indent"><span class="ft-dir">src/</span></span>
+    <span class="ft-indent2"><span class="ft-file important">main.rs</span> <span class="ft-comment">← 진입점, single-instance 체크, nwg 앱 생성, 이벤트 루프</span></span>
+    <span class="ft-indent2"><span class="ft-file important">state.rs</span> <span class="ft-comment">← SharedState 원자 상태</span></span>
+    <span class="ft-indent2"><span class="ft-file important">timer.rs</span> <span class="ft-comment">← 카운트다운 스레드, Alarm 전이, Notice 트리거</span></span>
+    <span class="ft-indent2"><span class="ft-file important">ui.rs</span>    <span class="ft-comment">← nwg UI 구조체(pip 창 + 트레이 + Notice), 이벤트 핸들러</span></span>
+    <span class="ft-indent2"><span class="ft-file important">alarm.rs</span> <span class="ft-comment">← 알람 비프 루프 / 확인음 더블비프</span></span>
+    <span class="ft-indent2"><span class="ft-file important">instance.rs</span> <span class="ft-comment">← CreateMutexW 기반 single-instance lock</span></span>
+    <span class="ft-indent2"><span class="ft-file important">power.rs</span> <span class="ft-comment">← WM_POWERBROADCAST 수신, suspend 시 종료</span></span>
+  </div>
+  <div class="note-box">build.rs 제거 — <code>#![windows_subsystem = "windows"]</code> 어트리뷰트 하나로 콘솔 숨김 해결.</div>
+</div>
+
+<!-- 6. Cargo.toml -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2>Cargo.toml</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="toml-block">
+    <div><span class="toml-section">[package]</span></div>
+    <div><span class="toml-key">name</span> = <span class="toml-val">"alarm-app"</span></div>
+    <div><span class="toml-key">version</span> = <span class="toml-val">"0.1.0"</span></div>
+    <div><span class="toml-key">edition</span> = <span class="toml-val">"2021"</span></div>
+    <br>
+    <div><span class="toml-section">[dependencies]</span></div>
+    <div><span class="toml-key">native-windows-gui</span> = <span class="toml-val">"1.0"</span></div>
+    <div><span class="toml-key">native-windows-derive</span> = <span class="toml-val">"1.0"</span></div>
+    <br>
+    <div><span class="toml-key">[dependencies.windows-sys]</span></div>
+    <div><span class="toml-key">version</span> = <span class="toml-val">"0.59"</span></div>
+    <div><span class="toml-key">features</span> = <span class="toml-val">[</span></div>
+    <div>&nbsp;&nbsp;<span class="toml-val">"Win32_Foundation",</span></div>
+    <div>&nbsp;&nbsp;<span class="toml-val">"Win32_System_Threading",</span>&nbsp;&nbsp;<span class="toml-comment"># CreateMutexW</span></div>
+    <div>&nbsp;&nbsp;<span class="toml-val">"Win32_System_Console",</span>&nbsp;&nbsp;<span class="toml-comment"># Beep (utilapiset 계열)</span></div>
+    <div>&nbsp;&nbsp;<span class="toml-val">"Win32_UI_WindowsAndMessaging",</span>&nbsp;<span class="toml-comment"># SetWindowPos, FindWindow, WM_*</span></div>
+    <div>&nbsp;&nbsp;<span class="toml-val">"Win32_UI_HiDpi",</span>&nbsp;&nbsp;<span class="toml-comment"># SetProcessDPIAware</span></div>
+    <div>&nbsp;&nbsp;<span class="toml-val">"Win32_System_Power",</span>&nbsp;&nbsp;<span class="toml-comment"># PBT_APMSUSPEND</span></div>
+    <div><span class="toml-val">]</span></div>
+    <br>
+    <div><span class="toml-section">[profile.release]</span></div>
+    <div><span class="toml-key">opt-level</span> = <span class="toml-val">"z"</span>&nbsp;&nbsp;&nbsp;<span class="toml-comment"># 바이너리 크기 최소화</span></div>
+    <div><span class="toml-key">lto</span> = <span class="toml-val">true</span></div>
+    <div><span class="toml-key">strip</span> = <span class="toml-val">true</span></div>
+    <div><span class="toml-key">codegen-units</span> = <span class="toml-val">1</span></div>
+    <div><span class="toml-key">panic</span> = <span class="toml-val">"abort"</span>&nbsp;&nbsp;<span class="toml-comment"># 패닉 시 언와인드 제거 → 크기↓ 속도↑</span></div>
+    <br>
+    <div><span class="toml-section">[[bin]]</span></div>
+    <div><span class="toml-key">name</span> = <span class="toml-val">"alarm-app"</span></div>
+    <div><span class="toml-key">path</span> = <span class="toml-val">"src/main.rs"</span></div>
+  </div>
+  <div class="note-box">빌드 커맨드: <code>cargo build --release --target x86_64-pc-windows-msvc</code></div>
+</div>
+
+<!-- 7. 모듈별 구현 명세 -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <h2>모듈별 구현 명세</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">main.rs</div>
+    <p>1. 최상단: <code>#![windows_subsystem = "windows"]</code> (콘솔 창 숨김)<br>
+    2. <code>instance::acquire_lock()</code> 호출 — 이미 실행 중이면 기존 창을 foreground로 올리고 <code>std::process::exit(0)</code><br>
+    3. <code>unsafe { SetProcessDPIAware(); }</code> — 시스템 DPI 대응(인자 없음, 가장 단순한 형태). <strong style="color: var(--text);">반드시 nwg::init() 이전</strong>에 호출.<br>
+    4. <code>let reset = std::env::var("DEBUG_TIMER").ok().and_then(|s| s.parse().ok()).unwrap_or(100);</code><br>
+    5. <code>let state = SharedState::new(reset);</code><br>
+    6. <code>nwg::init()</code> → <code>ui::AlarmApp::build_ui(...)</code> (nwg-derive)<br>
+    7. 창 생성 후 초기 위치를 우측 하단으로 배치 — <code>SystemParametersInfoW(SPI_GETWORKAREA)</code>로 작업 영역 조회, 창 크기만큼 빼고 12px 여백<br>
+    8. <code>timer::spawn(state.clone(), ui_notice_sender)</code><br>
+    9. <code>power::register_handlers(hwnd)</code> — pip 창 hwnd에 WM_POWERBROADCAST 서브클래싱<br>
+    10. <code>nwg::dispatch_thread_events()</code> — 메인 루프 진입</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">state.rs</div>
+    <p>섹션 04 코드 그대로. <code>AtomicU64</code> + <code>AtomicBool</code>만 사용. <code>Ordering::Acquire</code>/<code>Release</code>로 쓰기·읽기 순서 보장. Mutex 없음 → 데드락 불가능.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">timer.rs</div>
+    <p><code>pub fn spawn(state: Arc&lt;SharedState&gt;, notice: nwg::NoticeSender)</code><br>
+    루프 내부:<br>
+    &nbsp;&nbsp;<code>thread::sleep(Duration::from_secs(1));</code><br>
+    &nbsp;&nbsp;<code>let cur = state.remaining_secs.load(Acquire);</code><br>
+    &nbsp;&nbsp;<code>if cur == 0 { continue; }</code> &nbsp;<span style="color: var(--muted);">// Alarm 중 — 감소·notice 모두 생략(UI는 blink_timer가 담당)</span><br>
+    &nbsp;&nbsp;<code>let next = cur - 1;</code><br>
+    &nbsp;&nbsp;<code>state.remaining_secs.store(next, Release);</code><br>
+    &nbsp;&nbsp;<code>if next == 0 { state.alarm_active.store(true, Release); alarm::start_beep_loop(state.clone()); }</code><br>
+    &nbsp;&nbsp;<code>notice.notice();</code> &nbsp;<span style="color: var(--muted);">// 메인 스레드에 "UI 갱신하라" 신호</span></p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">ui.rs</div>
+    <p><code>#[derive(NwgUi)]</code>로 AlarmApp 구조체 선언:<br>
+    • <code>window: nwg::Window</code> — 160×72 논리 픽셀, <code>WS_EX_TOPMOST | WS_EX_TOOLWINDOW</code>, 보더리스(no_min_max, no_system_menu). 타이틀: <code>"AlarmApp_v1_singleton_marker"</code>(single-instance 검출용 고유 제목, 보더리스라 화면에 안 보임)<br>
+    • <code>label_caption: nwg::Label</code> — "다음 알람까지" 소제목<br>
+    • <code>label_time: nwg::Label</code> — "M:SS" 큰 시간 표시<br>
+    • <code>btn_frame: nwg::Frame</code> — 가짜 버튼의 배경(Frame은 background_color 설정 가능)<br>
+    • <code>btn_label: nwg::Label</code> — btn_frame 위에 겹친 "확인" 텍스트. 클릭 이벤트는 label의 OnLabelClick으로 받음<br>
+    • <code>tray: nwg::TrayNotification</code> — <code>assets/icon.ico</code> 임베드(<code>include_bytes!</code>)<br>
+    • <code>tray_menu: nwg::Menu</code>(popup: true) — 우클릭 시 매번 재구축됨<br>
+    • <code>tick_notice: nwg::Notice</code> — timer_thread가 깨우는 시그널<br>
+    • <code>blink_timer: nwg::AnimationTimer</code> — 500ms 주기, 알람 중에만 활성<br>
+    <br>
+    <strong style="color: var(--text);">이벤트 매핑</strong>:<br>
+    • <code>OnNotice(tick_notice)</code> → <code>refresh_ui()</code>: label_time 텍스트 갱신, tray tooltip(<code>set_tip</code>)도 같이 갱신<br>
+    • <code>OnLabelClick(btn_label)</code> → <code>on_confirm()</code>: is_alarming일 때만 동작. alarm_active=false → remaining_secs=reset_secs → blink_timer stop → btn_frame 원색 복귀 → confirm_beep → UI refresh<br>
+    • <code>OnMousePress(window, MousePressLeftDown)</code> → 드래그 구현 (아래 UI 명세 참조)<br>
+    • <code>OnContextMenu(tray)</code> → <strong style="color: var(--text);">매번 tray_menu 재구축</strong>: 기존 menu item 전부 제거(또는 새 Menu 인스턴스로 교체) → 현재 남은 시간으로 "남은 시간: M:SS" MenuItem(disabled=true) + "종료" MenuItem 생성 후 <code>tray_menu.popup(cursor_x, cursor_y)</code><br>
+    • <code>OnMenuItemSelected(exit_item)</code> → <code>nwg::stop_thread_dispatch()</code><br>
+    • <code>OnTimerTick(blink_timer)</code> → btn_frame 배경색 토글(<code>#ff4444</code> ↔ <code>#661111</code>)<br>
+    • <code>OnWindowClose(window)</code> → 아무것도 하지 않음(닫기 무시) — Alt+F4로는 종료되지 않음. 종료는 트레이 메뉴로만.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">alarm.rs</div>
+    <p><code>pub fn start_beep_loop(state: Arc&lt;SharedState&gt;)</code>:<br>
+    &nbsp;&nbsp;<code>thread::spawn(move || { while state.alarm_active.load(Acquire) { unsafe { Beep(1200, 80); } thread::sleep(Duration::from_millis(60)); } });</code><br>
+    <br>
+    <code>pub fn play_confirm_sound()</code> — detached 스레드:<br>
+    &nbsp;&nbsp;<code>thread::spawn(|| unsafe { Beep(1800, 60); Beep(2400, 60); });</code><br>
+    <br>
+    톤 구분: 알람 = 1200Hz 반복(게임 BGM 위로 뚫고 나오는 대역), 확인 = 1800→2400Hz 상승 더블비프.<br>
+    <strong style="color: var(--text);">Beep duration 80ms의 근거</strong>: Beep()은 동기 블로킹 → 확인 클릭 후 최대 80ms 지연으로 알람 종료. 게임 조작 리듬을 깨지 않는 수준.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">instance.rs</div>
+    <p><code>pub fn acquire_lock() -&gt; bool</code>:<br>
+    &nbsp;&nbsp;<code>unsafe { CreateMutexW(null, TRUE, w!("Global\\AlarmAppSingletonMutex_v1")) }</code><br>
+    &nbsp;&nbsp;<code>if GetLastError() == ERROR_ALREADY_EXISTS { focus_existing_window(); return false; }</code><br>
+    &nbsp;&nbsp;<code>true</code><br>
+    <br>
+    <code>focus_existing_window()</code>: 고유 창 제목으로 기존 창 찾기:<br>
+    &nbsp;&nbsp;<code>let hwnd = unsafe { FindWindowW(null(), w!("AlarmApp_v1_singleton_marker")) };</code><br>
+    &nbsp;&nbsp;<code>if !hwnd.is_null() { unsafe { ShowWindow(hwnd, SW_RESTORE); SetForegroundWindow(hwnd); } }</code><br>
+    <br>
+    <strong style="color: var(--text);">전제</strong>: ui.rs에서 pip Window 생성 시 title을 <code>"AlarmApp_v1_singleton_marker"</code>로 고정해야 함. 보더리스 창이라 화면에는 표시되지 않음.<br>
+    Mutex 핸들은 프로세스 종료 시 OS가 자동 해제 — 명시적 close 불필요.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">power.rs</div>
+    <p><code>pub fn register_handlers(hwnd: HWND)</code>:<br>
+    nwg window에 raw event handler 바인딩 (<code>nwg::bind_raw_event_handler</code>).<br>
+    <code>WM_POWERBROADCAST</code> 수신 + <code>wparam == PBT_APMSUSPEND (0x0004)</code> → <code>nwg::stop_thread_dispatch()</code>로 정상 종료 경로 진입.<br>
+    resume 시에는 어차피 프로세스가 죽어있으므로 처리 불필요.</p>
+  </div>
+</div>
+
+<!-- 8. UI 명세 -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">08</span>
+    <h2>UI 명세</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="mockup-grid">
+    <div class="mockup-item">
+      <span class="mockup-label">NORMAL</span>
+      <div class="pip-window normal">
+        <div class="pip-row">
+          <div class="pip-dot green"></div>
+          <div>
+            <div class="pip-sub">다음 알람까지</div>
+            <div class="pip-time normal-time">1:23</div>
+          </div>
+        </div>
+        <button class="pip-btn inactive" disabled>확인</button>
+      </div>
+    </div>
+    <div class="mockup-item">
+      <span class="mockup-label">ALARM (blinking)</span>
+      <div class="pip-window alarm">
+        <div class="pip-row">
+          <div class="pip-dot red"></div>
+          <div>
+            <div class="pip-sub alarm-sub">알람</div>
+            <div class="pip-time alarm-time">00:00</div>
+          </div>
+        </div>
+        <button class="pip-btn active">확인</button>
+      </div>
+    </div>
+    <div class="mockup-item">
+      <span class="mockup-label">TRAY MENU</span>
+      <div class="tray-menu">
+        <div class="tray-header">남은 시간 <span>1:23</span></div>
+        <div class="tray-item">종료</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <ul class="spec-list">
+      <li><span class="tag note">size</span>pip 창 고정 크기 160×72 논리 픽셀 (DPI 100% 기준). DPI 변경 시 <code>GetDpiForWindow</code>로 재계산</li>
+      <li><span class="tag note">pos</span>초기 위치: 우측 하단(작업표시줄 위 12px 여백). <code>SystemParametersInfoW(SPI_GETWORKAREA)</code>로 작업 영역 조회. 드래그로 이동한 좌표는 프로세스 메모리에만 유지되며, 재실행 시 다시 우측 하단</li>
+      <li><span class="tag note">drag</span>타이틀바 없이 드래그: window의 <code>OnMousePress(MousePressLeftDown)</code> 핸들러에서 <code>unsafe { ReleaseCapture(); SendMessageW(hwnd, WM_NCLBUTTONDOWN, HTCAPTION as WPARAM, 0); }</code></li>
+      <li><span class="tag note">blink</span>알람 중 500ms 간격 <code>btn_frame.set_background_color([0xff,0x44,0x44])</code> ↔ <code>[0x66,0x11,0x11]</code> 토글. Idle 복귀 시 즉시 중단 + 원래 비활성 색상(<code>[0x22,0x22,0x22]</code>) 복귀</li>
+      <li><span class="tag note">zorder</span>일반 창(크롬, 에디터, 탐색기 등)은 non-topmost이므로 pip가 항상 위. 다른 topmost 창과는 경쟁이지만 대부분 pip가 상단 유지. 게임이 창모드·테두리 없는 창모드라면 pip가 게임 위에 보임. 배타적 전체화면은 예외(프로젝트 목적 섹션 참조)</li>
+      <li><span class="tag warn">dpi</span>첨부 .ico가 30×26 단일 사이즈 — 고DPI 트레이에서 흐릿함. 16×16, 20×20, 24×24, 32×32, 40×40, 48×48 멀티 사이즈 .ico로 재생성 권장 (ImageMagick: <code>magick icon.png -define icon:auto-resize=48,40,32,24,20,16 icon.ico</code>)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 9. 빌드 & 배포 -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">09</span>
+    <h2>빌드 & 배포</h2>
+    <div class="section-line"></div>
+  </div>
+  <ul class="checklist">
+    <li><div class="check-box"></div>Rust 설치 + <code>rustup target add x86_64-pc-windows-msvc</code></li>
+    <li><div class="check-box"></div><code>assets/icon.ico</code> 배치 (멀티 사이즈 권장)</li>
+    <li><div class="check-box"></div>개발 중 빠른 테스트: <code>DEBUG_TIMER=10 cargo run</code> — 10초마다 알람</li>
+    <li><div class="check-box"></div>릴리즈 빌드: <code>cargo build --release --target x86_64-pc-windows-msvc</code></li>
+    <li><div class="check-box"></div>산출물: <code>target/x86_64-pc-windows-msvc/release/alarm-app.exe</code> — 단일 파일, 외부 DLL 없음</li>
+    <li><div class="check-box"></div>(선택) UPX로 추가 압축: <code>upx --best alarm-app.exe</code></li>
+    <li><div class="check-box"></div>스모크 테스트: 두 번 실행 → 두 번째는 즉시 종료되고 기존 창 활성화되는지 확인</li>
+    <li><div class="check-box"></div>스모크 테스트: 노트북 뚜껑 닫기/슬립 → 복귀 후 프로세스 없는지 확인</li>
+  </ul>
+</div>
+
+<!-- 10. 구현 주의사항 -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">10</span>
+    <h2>구현 주의사항</h2>
+    <div class="section-line"></div>
+  </div>
+  <ul class="spec-list">
+    <li><span class="tag warn">critical</span>nwg UI 컴포넌트는 <strong style="color: var(--text);">반드시 메인 스레드에서만</strong> 생성·접근. 워커 스레드 → UI 갱신은 <code>nwg::Notice</code> 통해서만.</li>
+    <li><span class="tag warn">critical</span>beep_thread는 <code>alarm_active</code>만 검사 — Beep duration 80ms 내 종료 보장. JoinHandle 보관 불필요(자연 종료).</li>
+    <li><span class="tag warn">critical</span>확인 클릭 핸들러 순서: <code>alarm_active.store(false)</code> → <code>remaining_secs.store(reset_secs)</code> → blink_timer stop → btn_frame 원색 복귀 → confirm_beep 재생 → UI refresh. 순서 역전 시 beep이 늦게 멈추거나 UI가 한 프레임 늦게 갱신됨.</li>
+    <li><span class="tag note">dpi</span><code>SetProcessDPIAware()</code>는 <strong style="color: var(--text);">nwg::init() 이전</strong>에 호출해야 효과 있음. 인자 없는 함수라 가장 단순.</li>
+    <li><span class="tag note">panic</span>릴리즈 프로파일에 <code>panic = "abort"</code> 설정. 어떤 스레드든 패닉하면 프로세스 통째로 종료 — 좀비 백그라운드 프로세스 방지.</li>
+    <li><span class="tag warn">critical</span>nwg <code>MenuItem</code>에는 런타임 <code>set_label</code> / <code>set_text</code> setter가 <strong style="color: var(--text);">존재하지 않음</strong>. "남은 시간" 표시는 <code>OnContextMenu</code> 핸들러에서 매번 메뉴를 새로 빌드해 popup. 재빌드 비용은 우클릭 시점 1회라 무시 가능.</li>
+    <li><span class="tag note">close</span>pip 창 X 버튼 없음(보더리스). Alt+F4는 OnWindowClose 핸들러에서 무시 처리 → 종료되지 않음. 종료는 <strong style="color: var(--text);">오직 트레이 메뉴 "종료"를 통해서만</strong>.</li>
+    <li><span class="tag warn">game</span>게임이 <strong style="color: var(--text);">배타적 전체화면</strong>이면 WS_EX_TOPMOST도 덮여서 pip 안 보임. 창모드/테두리 없는 창모드에서만 동작. 이 프로그램은 감지·우회 시도하지 않음 — 사용자가 설정으로 해결.</li>
+    <li><span class="tag note">env</span><code>DEBUG_TIMER</code>는 프로세스 시작 시점 1회만 읽음. 런타임 변경 불가(단순화).</li>
+  </ul>
+</div>
+
+<!-- 11. 오픈 이슈 -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">11</span>
+    <h2>의도적으로 범위 제외</h2>
+    <div class="section-line"></div>
+  </div>
+  <ul class="spec-list">
+    <li><span class="tag note">scope</span>설정 UI 없음 — 간격 변경은 환경변수로만</li>
+    <li><span class="tag note">scope</span>알람 이력/통계 저장 없음</li>
+    <li><span class="tag note">scope</span>자동 시작(startup 등록) 없음 — 수동 실행</li>
+    <li><span class="tag note">scope</span>슬립 복귀 후 자동 재시작 없음 — 한 세션용 도구</li>
+    <li><span class="tag note">scope</span>다국어 지원 없음 — 한국어 고정</li>
+  </ul>
+</div>
+</body>
+</html>
