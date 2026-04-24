@@ -22,6 +22,9 @@ Thumbs.db
 *.manifest
 !assets/app.manifest
 
+# Local settings
+**/settings.local.json
+
 # Custom
 *fuck*/
 **/*fuck*
