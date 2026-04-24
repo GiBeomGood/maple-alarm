@@ -31,7 +31,7 @@ fn main() {
         return;
     }
 
-    let reset_secs = resolve_reset_secs().unwrap_or(100);
+    let reset_secs = resolve_reset_secs().unwrap_or(110);
     let shared_state = Arc::new(SharedState::new(reset_secs));
 
     nwg::init().expect("NWG init failed");

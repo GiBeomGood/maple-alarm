@@ -22,7 +22,7 @@ pub struct AlarmApp {
         size: (180, 128),
         title: "AlarmApp_v1_singleton_marker",
         flags: "POPUP | VISIBLE",
-        ex_flags: WS_EX_TOOLWINDOW | WS_EX_TOPMOST
+        ex_flags: WS_EX_TOOLWINDOW | WS_EX_TOPMOST | WS_EX_NOACTIVATE
     )]
     #[nwg_events(OnWindowClose: [AlarmApp::on_close])]
     pub window: nwg::Window,

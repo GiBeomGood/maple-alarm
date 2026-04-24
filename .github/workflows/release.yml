@@ -27,5 +27,5 @@ jobs:
       - name: Upload Release
         uses: softprops/action-gh-release@v2
         with:
-          files: target/release/alarm-app.exe
+          files: target/release/timer.exe
           generate_release_notes: true
