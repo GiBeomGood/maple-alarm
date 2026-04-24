@@ -1,31 +1,67 @@
-use crate::state::SharedState;
-use std::sync::Arc;
+use std::sync::OnceLock;
+use std::sync::Mutex;
+use std::sync::mpsc::{self, Sender, RecvTimeoutError};
 use std::thread;
 use std::time::Duration;
 
-// Beep을 직접 kernel32에서 로드
 extern "system" {
     fn Beep(freq: u32, duration: u32) -> i32;
 }
 
-/// 알람 비프 루프 스레드 시작
-pub fn start_beep_loop(state: Arc<SharedState>) {
-    thread::spawn(move || {
-        while state.alarm_active.load(std::sync::atomic::Ordering::Acquire) {
-            unsafe {
-                Beep(1200, 80); // 1200Hz, 80ms
-            }
-            thread::sleep(Duration::from_millis(60));
-        }
-    });
+enum SoundCmd {
+    StartAlarm,
+    Confirm,
+    Reset,
 }
 
-/// 확인음 재생 (더블비프 1800→2400Hz)
+static SOUND_TX: OnceLock<Mutex<Sender<SoundCmd>>> = OnceLock::new();
+
+fn get_sender() -> &'static Mutex<Sender<SoundCmd>> {
+    SOUND_TX.get_or_init(|| {
+        let (tx, rx) = mpsc::channel::<SoundCmd>();
+        thread::spawn(move || {
+            let mut alarming = false;
+            loop {
+                if alarming {
+                    unsafe { Beep(1200, 100); }
+                    match rx.recv_timeout(Duration::from_millis(400)) {
+                        Ok(SoundCmd::Confirm) => {
+                            alarming = false;
+                            unsafe { Beep(1800, 80); Beep(2400, 80); }
+                        }
+                        Ok(SoundCmd::Reset) => {
+                            alarming = false;
+                            unsafe { Beep(2400, 80); Beep(1800, 80); }
+                        }
+                        Ok(SoundCmd::StartAlarm) | Err(RecvTimeoutError::Timeout) => {}
+                        Err(RecvTimeoutError::Disconnected) => break,
+                    }
+                } else {
+                    match rx.recv() {
+                        Ok(SoundCmd::StartAlarm) => { alarming = true; }
+                        Ok(SoundCmd::Confirm) => {
+                            unsafe { Beep(1800, 80); Beep(2400, 80); }
+                        }
+                        Ok(SoundCmd::Reset) => {
+                            unsafe { Beep(2400, 80); Beep(1800, 80); }
+                        }
+                        Err(_) => break,
+                    }
+                }
+            }
+        });
+        Mutex::new(tx)
+    })
+}
+
+pub fn start_beep_loop() {
+    let _ = get_sender().lock().unwrap().send(SoundCmd::StartAlarm);
+}
+
 pub fn play_confirm_sound() {
-    thread::spawn(|| {
-        unsafe {
-            Beep(1800, 60);
-            Beep(2400, 60);
-        }
-    });
+    let _ = get_sender().lock().unwrap().send(SoundCmd::Confirm);
+}
+
+pub fn play_reset_sound() {
+    let _ = get_sender().lock().unwrap().send(SoundCmd::Reset);
 }

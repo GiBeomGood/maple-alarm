@@ -4,7 +4,7 @@ use std::sync::Arc;
 /// 공유 상태 구조체 — Atomic으로 데드락 방지
 pub struct SharedState {
     pub remaining_secs: AtomicU64,  // 남은 시간(0 = 알람 중)
-    pub alarm_active: AtomicBool,   // beep_thread 루프 제어
+    pub alarm_active: AtomicBool,   // UI 상태 제어용 (테두리 색 등)
     pub reset_secs: u64,            // 리셋값 (기본 100, DEBUG_TIMER 시 다름)
 }
 

@@ -17,7 +17,7 @@ pub fn spawn_with_tick<F: Fn() + Send + 'static>(state: Arc<SharedState>, on_tic
 
                 if next == 0 {
                     state.alarm_active.store(true, Ordering::Release);
-                    alarm::start_beep_loop(state.clone());
+                    alarm::start_beep_loop();
                 }
             }
 

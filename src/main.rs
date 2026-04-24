@@ -5,8 +5,9 @@ use nwg::NativeUi;
 use std::collections::HashMap;
 use std::sync::Arc;
 use windows_sys::Win32::Foundation::RECT;
+use std::sync::atomic::Ordering;
 use windows_sys::Win32::Graphics::Gdi::{
-    CreateSolidBrush, FillRect, SetBkMode, SetTextColor, TRANSPARENT,
+    CreateSolidBrush, DeleteObject, FillRect, FrameRect, SetBkMode, SetTextColor, TRANSPARENT,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::GetClientRect;
 use windows_sys::Win32::UI::HiDpi::GetDpiForSystem;
@@ -51,7 +52,7 @@ fn main() {
         m.insert(hwnd_of(&app.label_caption_alarm),  0x00_44_44_ffu32);
         m.insert(hwnd_of(&app.label_time_alarm),     0x00_44_44_ffu32);
         // button text
-        m.insert(hwnd_of(&app.btn_normal),            0x00_55_55_55u32); // dim
+        m.insert(hwnd_of(&app.btn_normal),            0x00_ff_ff_ffu32); // white
         m.insert(hwnd_of(&app.btn_alarm_light),       0x00_ff_ff_ffu32); // white
         m.insert(hwnd_of(&app.btn_alarm_dark),        0x00_cc_cc_ccu32); // light gray
         m.insert(hwnd_of(&app.btn_flash),             0x00_ff_ff_ffu32); // white
@@ -63,7 +64,7 @@ fn main() {
     let bg_brushes: HashMap<isize, isize> = unsafe {
         let mut m = HashMap::new();
         let dark = CreateSolidBrush(0x00_1a_1a_1a) as isize;
-        let btn_normal  = CreateSolidBrush(0x00_22_22_22) as isize;
+        let btn_normal  = CreateSolidBrush(0x00_c8_64_28) as isize; // RGB(40,100,200)
         let btn_alarm   = CreateSolidBrush(0x00_44_44_ff) as isize; // #ff4444
         let btn_dark    = CreateSolidBrush(0x00_1e_1e_b4) as isize; // #b41e1e
         let btn_flash   = CreateSolidBrush(0x00_78_78_ff) as isize; // #ff7878
@@ -85,6 +86,7 @@ fn main() {
     };
 
     let dark_brush = unsafe { CreateSolidBrush(0x00_1a_1a_1a) };
+    let border_state = Arc::clone(&shared_state);
 
     let _color_handler = nwg::bind_raw_event_handler(
         &app.window.handle,
@@ -96,6 +98,13 @@ fn main() {
                     let mut rc: RECT = std::mem::zeroed();
                     GetClientRect(hwnd as *mut std::ffi::c_void, &mut rc);
                     FillRect(hdc, &rc, dark_brush);
+                    let is_alarming = border_state.alarm_active.load(Ordering::Acquire);
+                    let border_color: u32 = if is_alarming { 0x00_44_44_ff } else { 0x00_44_44_44 };
+                    let bb = CreateSolidBrush(border_color);
+                    FrameRect(hdc, &rc, bb);
+                    let rc_inner = RECT { left: rc.left+1, top: rc.top+1, right: rc.right-1, bottom: rc.bottom-1 };
+                    FrameRect(hdc, &rc_inner, bb);
+                    DeleteObject(bb as *mut _);
                 }
                 return Some(1);
             }
@@ -116,7 +125,7 @@ fn main() {
     ).expect("raw handler failed");
 
     // Position at bottom-right of work area
-    let (x, y) = bottom_right_pos(180, 96, 12);
+    let (x, y) = bottom_right_pos(180, 120, 12);
     unsafe {
         if let Some(hwnd) = app.window.handle.hwnd() {
             SetWindowPos(

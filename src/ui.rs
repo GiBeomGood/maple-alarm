@@ -10,7 +10,7 @@ use windows_sys::Win32::UI::WindowsAndMessaging::*;
 use windows_sys::core::w;
 
 const BG: [u8; 3] = [26, 26, 26];
-const BTN_NORMAL_BG: [u8; 3] = [34, 34, 34];
+const BTN_NORMAL_BG: [u8; 3] = [40, 100, 200];
 const BTN_ALARM_BG: [u8; 3] = [255, 68, 68];
 const BTN_ALARM_DARK_BG: [u8; 3] = [180, 30, 30];
 const BTN_FLASH_BG: [u8; 3] = [255, 120, 120];
@@ -20,7 +20,7 @@ const DOT_RED: [u8; 3] = [255, 68, 68];
 #[derive(NwgUi, Default)]
 pub struct AlarmApp {
     #[nwg_control(
-        size: (180, 96),
+        size: (180, 120),
         title: "AlarmApp_v1_singleton_marker",
         flags: "POPUP | VISIBLE",
         ex_flags: WS_EX_TOOLWINDOW | WS_EX_TOPMOST
@@ -43,7 +43,7 @@ pub struct AlarmApp {
     #[nwg_resource(family: "Consolas", size: 24, weight: 700)]
     pub font_time: nwg::Font,
 
-    #[nwg_resource(family: "Malgun Gothic", size: 13)]
+    #[nwg_resource(family: "Malgun Gothic", size: 15)]
     pub font_small: nwg::Font,
 
     // Status dot – normal (green), alarm (red)
@@ -66,20 +66,22 @@ pub struct AlarmApp {
     // Caption labels
     #[nwg_control(
         text: "다음 알람까지",
-        position: (27, 9),
-        size: (146, 16),
+        position: (2, 9),
+        size: (176, 20),
         font: Some(&data.font_small),
-        background_color: Some(BG)
+        background_color: Some(BG),
+        h_align: HTextAlign::Center
     )]
     #[nwg_events(OnMousePress: [AlarmApp::begin_drag])]
     pub label_caption_normal: nwg::Label,
 
     #[nwg_control(
         text: "알람",
-        position: (27, 9),
-        size: (146, 16),
+        position: (2, 9),
+        size: (176, 20),
         font: Some(&data.font_small),
-        background_color: Some(BG)
+        background_color: Some(BG),
+        h_align: HTextAlign::Center
     )]
     #[nwg_events(OnMousePress: [AlarmApp::begin_drag])]
     pub label_caption_alarm: nwg::Label,
@@ -87,67 +89,77 @@ pub struct AlarmApp {
     // Time labels
     #[nwg_control(
         text: "--:--",
-        position: (12, 29),
-        size: (158, 32),
+        position: (2, 33),
+        size: (176, 34),
         font: Some(&data.font_time),
-        background_color: Some(BG)
+        background_color: Some(BG),
+        h_align: HTextAlign::Center
     )]
     #[nwg_events(OnMousePress: [AlarmApp::begin_drag])]
     pub label_time_normal: nwg::Label,
 
     #[nwg_control(
-        text: "00:00",
-        position: (12, 29),
-        size: (158, 32),
+        text: "0:00",
+        position: (2, 33),
+        size: (176, 34),
         font: Some(&data.font_time),
-        background_color: Some(BG)
+        background_color: Some(BG),
+        h_align: HTextAlign::Center
     )]
     #[nwg_events(OnMousePress: [AlarmApp::begin_drag])]
     pub label_time_alarm: nwg::Label,
 
     // Confirm button variants
     #[nwg_control(
-        text: "확인",
-        position: (8, 70),
-        size: (164, 20),
+        text: "초기화",
+        position: (8, 80),
+        size: (164, 32),
         font: Some(&data.font_small),
-        background_color: Some(BTN_NORMAL_BG)
+        background_color: Some(BTN_NORMAL_BG),
+        h_align: HTextAlign::Center,
+        v_align: VTextAlign::Center
     )]
-    #[nwg_events(OnMousePress: [AlarmApp::on_confirm])]
+    #[nwg_events(OnMousePress: [AlarmApp::on_reset])]
     pub btn_normal: nwg::Label,
 
     #[nwg_control(
         text: "확인",
-        position: (8, 70),
-        size: (164, 20),
+        position: (8, 80),
+        size: (164, 32),
         font: Some(&data.font_small),
-        background_color: Some(BTN_ALARM_BG)
+        background_color: Some(BTN_ALARM_BG),
+        h_align: HTextAlign::Center,
+        v_align: VTextAlign::Center
     )]
     #[nwg_events(OnMousePress: [AlarmApp::on_confirm])]
     pub btn_alarm_light: nwg::Label,
 
     #[nwg_control(
         text: "확인",
-        position: (8, 70),
-        size: (164, 20),
+        position: (8, 80),
+        size: (164, 32),
         font: Some(&data.font_small),
-        background_color: Some(BTN_ALARM_DARK_BG)
+        background_color: Some(BTN_ALARM_DARK_BG),
+        h_align: HTextAlign::Center,
+        v_align: VTextAlign::Center
     )]
     #[nwg_events(OnMousePress: [AlarmApp::on_confirm])]
     pub btn_alarm_dark: nwg::Label,
 
     #[nwg_control(
         text: "확인",
-        position: (8, 70),
-        size: (164, 20),
+        position: (8, 80),
+        size: (164, 32),
         font: Some(&data.font_small),
-        background_color: Some(BTN_FLASH_BG)
+        background_color: Some(BTN_FLASH_BG),
+        h_align: HTextAlign::Center,
+        v_align: VTextAlign::Center
     )]
     #[nwg_events(OnMousePress: [AlarmApp::on_confirm])]
     pub btn_flash: nwg::Label,
 
     // Blink timer (500 ms)
-    #[nwg_control(interval: std::time::Duration::from_millis(500))]
+    #[nwg_control(interval: std::time::Duration::from_millis(250))]
     #[nwg_events(OnTimerTick: [AlarmApp::on_blink])]
     pub blink_timer: nwg::AnimationTimer,
 
@@ -181,13 +193,10 @@ impl AlarmApp {
         let remaining = state.remaining_secs.load(Ordering::Acquire);
         let is_alarm = remaining == 0;
 
-        let time_text = if is_alarm {
-            "00:00".to_string()
-        } else {
-            format!("{}:{:02}", remaining / 60, remaining % 60)
-        };
+        let time_text = format!("{}:{:02}", remaining / 60, remaining % 60);
 
         self.label_time_normal.set_text(&time_text);
+        self.label_time_alarm.set_text(&time_text);
 
         if is_alarm {
             self.dot_normal.set_visible(false);
@@ -226,6 +235,13 @@ impl AlarmApp {
         }
 
         self.tray.set_tip(&format!("Alarm - {}", time_text));
+
+        if let Some(hwnd) = self.window.handle.hwnd() {
+            unsafe {
+                use windows_sys::Win32::Graphics::Gdi::InvalidateRect;
+                InvalidateRect(hwnd as *mut _, std::ptr::null(), 1);
+            }
+        }
     }
 
     pub fn on_tick(&self) {
@@ -248,6 +264,14 @@ impl AlarmApp {
         self.flash_timer.start();
 
         alarm::play_confirm_sound();
+        self.refresh_ui();
+    }
+
+    pub fn on_reset(&self) {
+        let Some(ref state) = *self.shared_state.borrow() else { return };
+        if state.is_alarming() { return; }
+        state.remaining_secs.store(state.reset_secs, Ordering::Release);
+        alarm::play_reset_sound();
         self.refresh_ui();
     }
 
