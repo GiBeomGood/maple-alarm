@@ -39,12 +39,8 @@ fn get_sender() -> &'static Mutex<Sender<SoundCmd>> {
                 } else {
                     match rx.recv() {
                         Ok(SoundCmd::StartAlarm) => { alarming = true; }
-                        Ok(SoundCmd::Confirm) => {
-                            unsafe { Beep(1800, 80); Beep(2400, 80); }
-                        }
-                        Ok(SoundCmd::Reset) => {
-                            unsafe { Beep(2400, 80); Beep(1800, 80); }
-                        }
+                        Ok(SoundCmd::Confirm) => { unsafe { Beep(1800, 80); Beep(2400, 80); } }
+                        Ok(SoundCmd::Reset) => { unsafe { Beep(2400, 80); Beep(1800, 80); } }
                         Err(_) => break,
                     }
                 }

@@ -5,6 +5,7 @@ use std::sync::Arc;
 pub struct SharedState {
     pub remaining_secs: AtomicU64,  // 남은 시간(0 = 알람 중)
     pub alarm_active: AtomicBool,   // UI 상태 제어용 (테두리 색 등)
+    pub blink_dark: AtomicBool,     // 깜빡임 어두운 상태 — WM_CTLCOLORSTATIC 핸들러와 공유
     pub reset_secs: u64,            // 리셋값 (기본 100, DEBUG_TIMER 시 다름)
 }
 
@@ -13,6 +14,7 @@ impl SharedState {
         Arc::new(Self {
             remaining_secs: AtomicU64::new(reset_secs),
             alarm_active: AtomicBool::new(false),
+            blink_dark: AtomicBool::new(false),
             reset_secs,
         })
     }
