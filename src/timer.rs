@@ -13,9 +13,13 @@ pub fn spawn_with_tick<F: Fn() + Send + 'static>(state: Arc<SharedState>, on_tic
             let cur = state.remaining_secs.load(Ordering::Acquire);
             if cur > 0 {
                 let next = cur - 1;
-                state.remaining_secs.store(next, Ordering::Release);
+                let ok = state.remaining_secs.compare_exchange(
+                    cur, next,
+                    Ordering::AcqRel,
+                    Ordering::Relaxed,
+                ).is_ok();
 
-                if next == 0 {
+                if ok && next == 0 {
                     state.alarm_active.store(true, Ordering::Release);
                     alarm::start_beep_loop();
                 }

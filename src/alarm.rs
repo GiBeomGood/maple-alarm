@@ -28,10 +28,12 @@ fn get_sender() -> &'static Mutex<Sender<SoundCmd>> {
                         Ok(SoundCmd::Confirm) => {
                             alarming = false;
                             unsafe { Beep(1800, 80); Beep(2400, 80); }
+                            while matches!(rx.try_recv(), Ok(SoundCmd::Reset | SoundCmd::Confirm)) {}
                         }
                         Ok(SoundCmd::Reset) => {
                             alarming = false;
                             unsafe { Beep(2400, 80); Beep(1800, 80); }
+                            while matches!(rx.try_recv(), Ok(SoundCmd::Reset | SoundCmd::Confirm)) {}
                         }
                         Ok(SoundCmd::StartAlarm) | Err(RecvTimeoutError::Timeout) => {}
                         Err(RecvTimeoutError::Disconnected) => break,
@@ -39,8 +41,14 @@ fn get_sender() -> &'static Mutex<Sender<SoundCmd>> {
                 } else {
                     match rx.recv() {
                         Ok(SoundCmd::StartAlarm) => { alarming = true; }
-                        Ok(SoundCmd::Confirm) => { unsafe { Beep(1800, 80); Beep(2400, 80); } }
-                        Ok(SoundCmd::Reset) => { unsafe { Beep(2400, 80); Beep(1800, 80); } }
+                        Ok(SoundCmd::Confirm) => {
+                            unsafe { Beep(1800, 80); Beep(2400, 80); }
+                            while matches!(rx.try_recv(), Ok(SoundCmd::Reset | SoundCmd::Confirm)) {}
+                        }
+                        Ok(SoundCmd::Reset) => {
+                            unsafe { Beep(2400, 80); Beep(1800, 80); }
+                            while matches!(rx.try_recv(), Ok(SoundCmd::Reset | SoundCmd::Confirm)) {}
+                        }
                         Err(_) => break,
                     }
                 }

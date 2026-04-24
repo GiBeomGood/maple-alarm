@@ -262,9 +262,14 @@ impl AlarmApp {
 
     pub fn on_reset(&self) {
         let Some(ref state) = *self.shared_state.borrow() else { return };
-        if state.is_alarming() { return; }
-        if state.remaining_secs.load(Ordering::Acquire) == state.reset_secs { return; }
-        state.remaining_secs.store(state.reset_secs, Ordering::Release);
+        let old = state.remaining_secs.load(Ordering::Acquire);
+        if old == 0 || old == state.reset_secs { return; }
+        if state.remaining_secs
+            .compare_exchange(old, state.reset_secs, Ordering::AcqRel, Ordering::Relaxed)
+            .is_err()
+        {
+            return;
+        }
         alarm::play_reset_sound();
         self.refresh_ui();
     }
