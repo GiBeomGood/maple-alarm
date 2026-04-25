@@ -60,13 +60,12 @@ fn main() {
 
     // Pre-create background brushes per control
     // COLORREF is 0x00BBGGRR
-    let (bg_brushes, btn_normal_brush, btn_alarm_light_brush, btn_alarm_dark_brush, btn_flash_brush) = unsafe {
+    let (bg_brushes, btn_normal_brush, btn_alarm_light_brush, btn_alarm_dark_brush) = unsafe {
         let mut m = HashMap::new();
         let dark          = CreateSolidBrush(0x00_1a_1a_1a) as isize;
         let btn_normal    = CreateSolidBrush(0x00_c8_64_28) as isize; // RGB(40,100,200)
         let btn_alarm_l   = CreateSolidBrush(0x00_44_44_ff) as isize; // #ff4444
         let btn_alarm_d   = CreateSolidBrush(0x00_1e_1e_b4) as isize; // #b41e1e
-        let btn_flash     = CreateSolidBrush(0x00_78_78_ff) as isize; // #ff7878
 
         for h in [
             hwnd_of(&app.label_caption_normal),
@@ -77,7 +76,7 @@ fn main() {
             hwnd_of(&app.dot_alarm),
         ] { m.insert(h, dark); }
 
-        (m, btn_normal, btn_alarm_l, btn_alarm_d, btn_flash)
+        (m, btn_normal, btn_alarm_l, btn_alarm_d)
     };
 
     // Pre-create border brushes to avoid GDI alloc on every repaint
@@ -128,7 +127,6 @@ fn main() {
     let font_btn_hfont = app.font_btn.handle;
     let blink_state_normal = Arc::clone(&shared_state);
     let blink_state_alarm  = Arc::clone(&shared_state);
-    let blink_state_flash  = Arc::clone(&shared_state);
 
     let _btn_normal_handler = nwg::bind_raw_event_handler(
         &app.btn_normal.handle,
@@ -184,33 +182,6 @@ fn main() {
             _ => { let _ = w; None }
         },
     ).expect("btn_alarm handler failed");
-
-    let _btn_flash_handler = nwg::bind_raw_event_handler(
-        &app.btn_flash.handle,
-        0xffff_0004,
-        move |hwnd, msg, w, _l| match msg {
-            WM_ERASEBKGND => Some(1),
-            WM_PAINT => {
-                let _ = &blink_state_flash;
-                unsafe {
-                    let mut ps: PAINTSTRUCT = std::mem::zeroed();
-                    let hdc = BeginPaint(hwnd as *mut _, &mut ps);
-                    let mut rc: RECT = std::mem::zeroed();
-                    GetClientRect(hwnd as *mut _, &mut rc);
-                    FillRect(hdc, &rc, btn_flash_brush as *mut _);
-                    SetBkMode(hdc, TRANSPARENT as i32);
-                    SetTextColor(hdc, 0x00_ff_ff_ff);
-                    let old = SelectObject(hdc, font_btn_hfont as *mut _);
-                    let text: Vec<u16> = "확인".encode_utf16().chain(Some(0)).collect();
-                    DrawTextW(hdc, text.as_ptr(), -1, &mut rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-                    SelectObject(hdc, old);
-                    EndPaint(hwnd as *mut _, &ps);
-                }
-                Some(0)
-            }
-            _ => { let _ = w; None }
-        },
-    ).expect("btn_flash handler failed");
 
     let _vol_icon_handler = nwg::bind_raw_event_handler(
         &app.vol_icon_ctrl.handle,

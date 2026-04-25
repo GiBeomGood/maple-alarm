@@ -12,7 +12,6 @@ use windows_sys::core::w;
 const BG: [u8; 3] = [26, 26, 26];
 const BTN_NORMAL_BG: [u8; 3] = [40, 100, 200];
 const BTN_ALARM_BG: [u8; 3] = [255, 68, 68];
-const BTN_FLASH_BG: [u8; 3] = [255, 120, 120];
 const DOT_GREEN: [u8; 3] = [68, 255, 136];
 const DOT_RED: [u8; 3] = [255, 68, 68];
 
@@ -143,18 +142,6 @@ pub struct AlarmApp {
     #[nwg_events(OnMousePress: [AlarmApp::on_confirm])]
     pub btn_alarm: nwg::Label,
 
-    // Flash feedback button (brief highlight after confirm)
-    #[nwg_control(
-        text: "확인",
-        position: (8, 80),
-        size: (164, 40),
-        font: Some(&data.font_btn),
-        background_color: Some(BTN_FLASH_BG),
-        h_align: HTextAlign::Center,
-        v_align: VTextAlign::Center
-    )]
-    #[nwg_events(OnMousePress: [AlarmApp::on_confirm])]
-    pub btn_flash: nwg::Label,
 
     #[nwg_control(
         text: "",
@@ -178,14 +165,8 @@ pub struct AlarmApp {
     #[nwg_events(OnTimerTick: [AlarmApp::on_blink])]
     pub blink_timer: nwg::AnimationTimer,
 
-    // Flash feedback timer (140 ms)
-    #[nwg_control(interval: std::time::Duration::from_millis(140))]
-    #[nwg_events(OnTimerTick: [AlarmApp::on_confirm_flash_end])]
-    pub flash_timer: nwg::AnimationTimer,
-
     pub shared_state: RefCell<Option<Arc<SharedState>>>,
     pub blink_running: RefCell<bool>,
-    pub flash_active: RefCell<bool>,
 }
 
 impl AlarmApp {
@@ -198,7 +179,6 @@ impl AlarmApp {
         self.label_caption_alarm.set_visible(false);
         self.label_time_alarm.set_visible(false);
         self.btn_alarm.set_visible(false);
-        self.btn_flash.set_visible(false);
         if let Some(hwnd) = self.vol_window.handle.hwnd() {
             unsafe { ShowWindow(hwnd as *mut _, SW_HIDE); }
         }
@@ -229,7 +209,6 @@ impl AlarmApp {
                 state.blink_dark.store(false, Ordering::Release);
                 self.btn_normal.set_visible(false);
                 self.btn_alarm.set_visible(true);
-                self.btn_flash.set_visible(false);
             }
         } else {
             self.dot_normal.set_visible(true);
@@ -245,12 +224,8 @@ impl AlarmApp {
             }
             state.blink_dark.store(false, Ordering::Release);
 
-            // flash_active 중에는 btn_flash/btn_normal을 건드리지 않음
-            if !*self.flash_active.borrow() {
-                self.btn_normal.set_visible(true);
-                self.btn_alarm.set_visible(false);
-                self.btn_flash.set_visible(false);
-            }
+            self.btn_normal.set_visible(true);
+            self.btn_alarm.set_visible(false);
         }
 
         self.tray.set_tip(&format!("Alarm - {}", time_text));
@@ -280,10 +255,7 @@ impl AlarmApp {
         *self.blink_running.borrow_mut() = false;
         state.blink_dark.store(false, Ordering::Release);
         self.btn_alarm.set_visible(false);
-
-        *self.flash_active.borrow_mut() = true;
-        self.btn_flash.set_visible(true);
-        self.flash_timer.start();
+        self.btn_normal.set_visible(true);
 
         alarm::play_confirm_sound();
         self.refresh_ui();
@@ -301,13 +273,6 @@ impl AlarmApp {
         }
         alarm::play_reset_sound();
         self.refresh_ui();
-    }
-
-    pub fn on_confirm_flash_end(&self) {
-        self.flash_timer.stop();
-        *self.flash_active.borrow_mut() = false;
-        self.btn_flash.set_visible(false);
-        self.btn_normal.set_visible(true);
     }
 
     pub fn on_blink(&self) {
