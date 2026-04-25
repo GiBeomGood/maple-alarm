@@ -24,8 +24,8 @@ jobs:
       - name: Build
         run: cargo build --release
 
-      - name: Upload Release
+      - name: Upload Release (Draft)
         uses: softprops/action-gh-release@v2
         with:
           files: target/release/timer.exe
-          generate_release_notes: true
+          draft: true
