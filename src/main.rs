@@ -14,9 +14,9 @@ use windows_sys::Win32::Graphics::Gdi::{
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     GetClientRect, DrawIconEx, DI_NORMAL,
     WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MOUSEMOVE, WM_PARENTNOTIFY,
-    SetWindowPos, SPI_GETWORKAREA, SWP_NOSIZE, SWP_NOZORDER, SWP_SHOWWINDOW, HWND_TOPMOST,
-    SystemParametersInfoW, WM_CTLCOLORSTATIC, WM_ERASEBKGND, WM_PAINT,
-    GetWindowRect, ShowWindow, SW_HIDE,
+    SetWindowPos, SPI_GETWORKAREA, SWP_NOACTIVATE, SWP_NOSIZE, SWP_NOZORDER, SWP_SHOWWINDOW, HWND_TOPMOST,
+    SystemParametersInfoW, WM_CTLCOLORSTATIC, WM_ERASEBKGND, WM_MOVING, WM_PAINT,
+    GetWindowRect, IsWindowVisible, ShowWindow, SW_HIDE,
 };
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::{SetCapture, ReleaseCapture};
 use windows_sys::Win32::UI::HiDpi::GetDpiForSystem;
@@ -35,7 +35,7 @@ fn main() {
         return;
     }
 
-    let reset_secs = resolve_reset_secs().unwrap_or(110);
+    let reset_secs = resolve_reset_secs().unwrap_or(105);
     let shared_state = Arc::new(SharedState::new(reset_secs));
 
     nwg::init().expect("NWG init failed");
@@ -116,6 +116,20 @@ fn main() {
                     }
                     if let Some(&brush) = bg_brushes.get(&l) {
                         return Some(brush);
+                    }
+                }
+            }
+            if msg == WM_MOVING {
+                let _ = vol_window_hwnd_h;
+                if vol_window_hwnd_h != 0 {
+                    unsafe {
+                        let wr = &*(l as *const RECT);
+                        let is_visible = IsWindowVisible(vol_window_hwnd_h as *mut _) != 0;
+                        if is_visible {
+                            SetWindowPos(vol_window_hwnd_h as *mut _, std::ptr::null_mut(),
+                                wr.left, wr.top - 28, 0, 0,
+                                SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
+                        }
                     }
                 }
             }
