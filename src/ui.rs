@@ -30,6 +30,9 @@ pub struct AlarmApp {
     #[nwg_resource(source_bin: Some(include_bytes!("../assets/icon.ico")))]
     pub tray_icon_res: nwg::Icon,
 
+    #[nwg_resource(source_bin: Some(include_bytes!("../assets/volume.ico")))]
+    pub vol_icon_res: nwg::Icon,
+
     #[nwg_control(icon: Some(&data.tray_icon_res), tip: Some("Alarm"))]
     #[nwg_events(OnContextMenu: [AlarmApp::on_tray_menu])]
     pub tray: nwg::TrayNotification,
@@ -47,6 +50,9 @@ pub struct AlarmApp {
 
     #[nwg_resource(family: "Malgun Gothic", size: 22, weight: 700)]
     pub font_btn: nwg::Font,
+
+    #[nwg_resource(family: "Consolas", size: 13)]
+    pub font_vol: nwg::Font,
 
     // Status dot – normal (green), alarm (red)
     #[nwg_control(
@@ -150,6 +156,23 @@ pub struct AlarmApp {
     #[nwg_events(OnMousePress: [AlarmApp::on_confirm])]
     pub btn_flash: nwg::Label,
 
+    #[nwg_control(
+        text: "",
+        position: (159, 7),
+        size: (16, 16),
+        background_color: Some(BG)
+    )]
+    pub vol_icon_ctrl: nwg::Label,
+
+    // Volume slider — independent popup window positioned above main window
+    #[nwg_control(
+        size: (180, 28),
+        title: "",
+        flags: "POPUP",
+        ex_flags: WS_EX_TOOLWINDOW | WS_EX_TOPMOST | WS_EX_NOACTIVATE
+    )]
+    pub vol_window: nwg::Window,
+
     // Blink timer (250 ms per phase)
     #[nwg_control(interval: std::time::Duration::from_millis(250))]
     #[nwg_events(OnTimerTick: [AlarmApp::on_blink])]
@@ -176,6 +199,9 @@ impl AlarmApp {
         self.label_time_alarm.set_visible(false);
         self.btn_alarm.set_visible(false);
         self.btn_flash.set_visible(false);
+        if let Some(hwnd) = self.vol_window.handle.hwnd() {
+            unsafe { ShowWindow(hwnd as *mut _, SW_HIDE); }
+        }
     }
 
     pub fn refresh_ui(&self) {
@@ -229,9 +255,12 @@ impl AlarmApp {
 
         self.tray.set_tip(&format!("Alarm - {}", time_text));
 
-        if let Some(hwnd) = self.window.handle.hwnd() {
-            unsafe {
-                use windows_sys::Win32::Graphics::Gdi::InvalidateRect;
+        unsafe {
+            use windows_sys::Win32::Graphics::Gdi::InvalidateRect;
+            if let Some(hwnd) = self.window.handle.hwnd() {
+                InvalidateRect(hwnd as *mut _, std::ptr::null(), 1);
+            }
+            if let Some(hwnd) = self.vol_window.handle.hwnd() {
                 InvalidateRect(hwnd as *mut _, std::ptr::null(), 1);
             }
         }
